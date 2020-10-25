@@ -1,0 +1,1 @@
+jam -j24 && start "server" dist\server.exe 1337 && start "client1" dist\client.exe localhost 1337 && start "client2" dist\client.exe localhost 1337
