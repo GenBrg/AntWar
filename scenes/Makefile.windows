@@ -1,16 +1,13 @@
-
-BLENDER="C:\Program Files\Blender Foundation\Blender 2.90\blender.exe"
+BLENDER="D:\blender-2.90.0-windows64\blender.exe"
 DIST=../dist
+PROJECT_NAME=AntWar
 
 all : \
-    $(DIST)/phone-bank.pnct \
-    $(DIST)/phone-bank.scene \
+    $(DIST)/$(PROJECT_NAME).pnct \
+    $(DIST)/$(PROJECT_NAME).scene \
 
-$(DIST)/phone-bank.scene : phone-bank.blend export-scene.py
-    $(BLENDER) --background --python export-scene.py -- "phone-bank.blend:Platforms" "$(DIST)/phone-bank.scene"
+$(DIST)/$(PROJECT_NAME).scene : $(PROJECT_NAME).blend export-scene.py
+    $(BLENDER) --background --python export-scene.py -- "$(PROJECT_NAME).blend:Scene" "$(DIST)/$(PROJECT_NAME).scene"
 
-$(DIST)/phone-bank.pnct : phone-bank.blend export-meshes.py
-    $(BLENDER) --background --python export-meshes.py -- "phone-bank.blend:Platforms" "$(DIST)/phone-bank.pnct" 
-
-$(DIST)/phone-bank.w : phone-bank.blend export-walkmeshes.py
-    $(BLENDER) --background --python export-walkmeshes.py -- "phone-bank.blend:WalkMeshes" "$(DIST)/phone-bank.w" 
+$(DIST)/$(PROJECT_NAME).pnct : $(PROJECT_NAME).blend export-meshes.py
+    $(BLENDER) --background --python export-meshes.py -- "$(PROJECT_NAME).blend" "$(DIST)/$(PROJECT_NAME).pnct" 

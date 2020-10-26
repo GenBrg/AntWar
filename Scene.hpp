@@ -11,6 +11,7 @@
  */
 
 #include "GL.hpp"
+#include "Mesh.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -33,7 +34,7 @@ struct Scene {
 		glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
 
 		//The transform above may be relative to some parent transform:
-		Transform *parent = nullptr;
+		const Transform *parent = nullptr;
 
 		//It is often convenient to construct matrices representing this transformation:
 		// ..relative to its parent:
@@ -44,7 +45,7 @@ struct Scene {
 		glm::mat4x3 make_world_to_local() const;
 
 		//since hierarchy is tracked through pointers, copy-constructing a transform  is not advised:
-		Transform(Transform const &) = delete;
+		// Transform(Transform const &) = delete;
 		//if we delete some constructors, we need to let the compiler know that the default constructor is still okay:
 		Transform() = default;
 	};
@@ -52,18 +53,15 @@ struct Scene {
 	struct Drawable {
 		//a 'Drawable' attaches attribute data to a transform:
 		Drawable(Transform *transform_) : transform(transform_) { assert(transform); }
-		Transform * transform;
+		Drawable() { }
+		const Transform * transform;
 
 		//Contains all the data needed to run the OpenGL pipeline:
 		struct Pipeline {
 			GLuint program = 0; //shader program; passed to glUseProgram
 
 			//attributes:
-			GLuint vao = 0; //attrib->buffer mapping; passed to glBindVertexArray
-
-			GLenum type = GL_TRIANGLES; //what sort of primitive to draw; passed to glDrawArrays
-			GLuint start = 0; //first vertex to draw; passed to glDrawArrays
-			GLuint count = 0; //number of vertices to draw; passed to glDrawArrays
+			const Mesh* mesh = nullptr;
 
 			//uniforms:
 			GLuint OBJECT_TO_CLIP_mat4 = -1U; //uniform location for object to clip space matrix
@@ -79,6 +77,8 @@ struct Scene {
 				GLenum target = GL_TEXTURE_2D;
 			} textures[TextureCount];
 		} pipeline;
+
+		void Draw(glm::mat4 const &world_to_clip, glm::mat4x3 const &world_to_light) const;
 	};
 
 	struct Camera {
@@ -121,12 +121,13 @@ struct Scene {
 	std::list< Drawable > drawables;
 	std::list< Camera > cameras;
 	std::list< Light > lights;
+	std::list< Drawable > dynamic_drawables;
 
 	//The "draw" function provides a convenient way to pass all the things in a scene to OpenGL:
-	void draw(Camera const &camera) const;
+	void draw(Camera const &camera);
 
 	//..sometimes, you want to draw with a custom projection matrix and/or light space:
-	void draw(glm::mat4 const &world_to_clip, glm::mat4x3 const &world_to_light = glm::mat4x3(1.0f)) const;
+	void draw(glm::mat4 const &world_to_clip, glm::mat4x3 const &world_to_light = glm::mat4x3(1.0f));
 
 	//add transforms/objects/cameras from a scene file to this scene:
 	// the 'on_drawable' callback gives your code a chance to look up mesh data and make Drawables:

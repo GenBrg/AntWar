@@ -19,11 +19,12 @@ How To Play:
 Goals: Defeat your opponent's ant kingdom.
 Controls: \
 WASD: Move Camera\
-Arrow keys: Dialog\
+Arrow keys: Dialog
 
 Sources: \
-Black ant 3d model: 
-Red ant 3d model: 
+Ant model: https://free3d.com/3d-model/red-ant-2036.html\
+Storage structure model(Cake): https://free3d.com/3d-model/chocolate-cake-488496.html\
+Laboratory structure model: https://www.cgtrader.com/free-3d-models/science/medical/t-virus-3d-model
 
 This game was built with [NEST](NEST.md).
 

@@ -15,6 +15,8 @@
 #include <limits>
 #include <string>
 
+struct Mesh;
+struct MeshBuffer;
 
 struct Mesh {
 	//Meshes are vertex ranges (and primitive types) in their MeshBuffer:
@@ -22,6 +24,7 @@ struct Mesh {
 	GLenum type = GL_TRIANGLES; //type of primitives in mesh
 	GLuint start = 0; //index of first vertex
 	GLuint count = 0; //count of vertices
+	MeshBuffer* mesh_buffer;
 
 	//Bounding box.
 	//useful for debug visualization and (perhaps, eventually) collision detection:
@@ -40,7 +43,7 @@ struct MeshBuffer {
 	
 	//build a vertex array object that links this vbo to attributes to a program:
 	// note: will throw if program defines attributes not contained in this buffer
-	GLuint make_vao_for_program(GLuint program) const;
+	GLuint make_vao_for_program(GLuint program);
 
 	//This is the OpenGL vertex buffer object containing the mesh data:
 	GLuint buffer = 0;
@@ -67,4 +70,6 @@ struct MeshBuffer {
 	Attrib Normal;
 	Attrib Color;
 	Attrib TexCoord;
+
+	GLuint vao = 0;
 };

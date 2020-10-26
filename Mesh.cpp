@@ -72,6 +72,7 @@ MeshBuffer::MeshBuffer(std::string const &filename) {
 			mesh.type = GL_TRIANGLES;
 			mesh.start = entry.vertex_begin;
 			mesh.count = entry.vertex_end - entry.vertex_begin;
+			mesh.mesh_buffer = this;
 			for (uint32_t v = entry.vertex_begin; v < entry.vertex_end; ++v) {
 				mesh.min = glm::min(mesh.min, data[v].Position);
 				mesh.max = glm::max(mesh.max, data[v].Position);
@@ -106,9 +107,9 @@ const Mesh &MeshBuffer::lookup(std::string const &name) const {
 	return f->second;
 }
 
-GLuint MeshBuffer::make_vao_for_program(GLuint program) const {
+GLuint MeshBuffer::make_vao_for_program(GLuint program) {
 	//create a new vertex array object:
-	GLuint vao = 0;
+	vao = 0;
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 

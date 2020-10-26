@@ -25,13 +25,26 @@ template <typename T, size_t MagicHeaderSize>
 class MessageDispatcher;
 
 template<typename T>
-size_t get_net_size(const T& data);
+size_t get_net_size(const T& data) {
+	static_assert(std::is_standard_layout<T>::value, "Can not decide net size of non-standard_layout type");
+	return sizeof(data);
+}
 
 template<typename T>
-size_t get_net_size(const std::vector<T>& data);
+size_t get_net_size(const std::vector<T>& data) {
+	size_t sz = sizeof(uint16_t);
+
+	for (const T& d : data) {
+		sz += get_net_size(d);
+	}
+
+	return sz;
+}
 
 template<>
-size_t get_net_size<std::string>(const std::string& data);
+size_t get_net_size<std::string>(const std::string& data) {
+	return sizeof(uint16_t) + sizeof(std::string::value_type) * data.size();
+}
 
 #pragma pack(push, 1)
 
@@ -277,4 +290,7 @@ public:
 private:
 	std::string magic_header_;
 	std::unordered_map<T, std::function<void(MessageReaderType)>> rpc_dispatch_table_;
+
+	// TODO Maybe add rpc queue for client to poll events and execute in a separate thread.
+	// std::deque<std::pair<MessageReader, std::function<void(MessageReaderType)>> rpc_queue_;
 };

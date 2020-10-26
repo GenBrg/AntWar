@@ -1,6 +1,7 @@
 #include "Mode.hpp"
 
 #include "Connection.hpp"
+#include "Scene.hpp"
 
 #include <glm/glm.hpp>
 
@@ -30,4 +31,8 @@ struct PlayMode : Mode {
 	//connection to server:
 	Client &client;
 
+	Scene scene;
+
+	//camera:
+	Scene::Camera *camera = nullptr;
 };
