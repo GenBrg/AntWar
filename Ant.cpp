@@ -3,6 +3,8 @@
 #include "LitColorTextureProgram.hpp"
 #include "PlayMode.hpp"
 
+#include <iostream>
+
 Ant::Ant(Type type, int level, bool left_side) :
 type_(type),
 level_(level),

@@ -210,6 +210,8 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS); //this is the default depth comparison function, but FYI you can change it.
 
+	left_side.Draw(scene);
+	right_side.Draw(scene);
 	scene.draw(*camera);
 
 	{ //use DrawLines to overlay some text:

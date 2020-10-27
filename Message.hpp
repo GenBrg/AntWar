@@ -244,6 +244,8 @@ public:
 		constexpr size_t kHeaderSize = MessageType::kHeaderSize;
 		using Header = typename MessageType::MessageHeader;
 
+		bool succeed { true };
+
 		while (true) {
 			// Not enough data to complete packet header
 			if (read_ptr + kHeaderSize > recv_buffer.size()) {
@@ -267,7 +269,7 @@ public:
 			auto it = rpc_dispatch_table_.find(id);
 			if (it == rpc_dispatch_table_.end()) {
 				std::cerr << "No rpc corresponds to the packet, id: " << static_cast<uint32_t>(id) << std::endl;
-				return false;
+				succeed = false;
 			}
 
 			if (body_size > MessageType::kMaxMessageBodySize) {
@@ -290,7 +292,7 @@ public:
 
 		// Consume recv buffer
 		recv_buffer.erase(recv_buffer.begin(), recv_buffer.begin() + read_ptr);
-		return true;
+		return succeed;
 	}
 
 private:

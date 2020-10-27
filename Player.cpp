@@ -115,13 +115,13 @@ void Player::SummonAntImpl(MessageReader<RpcId, 4>& reader)
 		return;
 	}
 
-	int ant_price = GetAntPrice();
+	// int ant_price = GetAntPrice();
 
-	if (man_power_ < ant_price) {
-		return;
-	}
+	// if (man_power_ < ant_price) {
+	// 	return;
+	// }
 
-	man_power_ -= ant_price;
+	// man_power_ -= ant_price;
 
 	last_summon_time = now;
 
