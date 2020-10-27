@@ -42,6 +42,7 @@ right_side(ChannelId::RIGHT_SIDE)
 		reader >> is_left_side;
 
 		game_start = true;
+		std::cout << "Game starts!" << std::endl;
 		player = (is_left_side) ? &left_side : &right_side;
 	});
 
@@ -141,6 +142,20 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
+	client.poll([this](Connection *c, Connection::Event event){
+		if (event == Connection::OnOpen) {
+			std::cout << "[" << c->socket << "] opened" << std::endl;
+		} else if (event == Connection::OnClose) {
+			std::cout << "[" << c->socket << "] closed (!)" << std::endl;
+			throw std::runtime_error("Lost connection to server!");
+		} else { assert(event == Connection::OnRecv);
+			// std::cout << "[" << c->socket << "] recv'd data. Current buffer:\n" << hex_dump(c->recv_buffer); std::cout.flush();
+			if (!channel_dispatcher.OnRecv(c->recv_buffer)) {
+				throw std::runtime_error("Unexpected packet");
+			}
+		}
+	}, 0.0);
+
 	if (!game_start) {
 		return;
 	}
@@ -168,20 +183,6 @@ void PlayMode::update(float elapsed) {
 	if (enter.pressed) {
 		player->SummonAntStub(Ant::Type::FIGHTER);
 	}
-
-	client.poll([this](Connection *c, Connection::Event event){
-		if (event == Connection::OnOpen) {
-			std::cout << "[" << c->socket << "] opened" << std::endl;
-		} else if (event == Connection::OnClose) {
-			std::cout << "[" << c->socket << "] closed (!)" << std::endl;
-			throw std::runtime_error("Lost connection to server!");
-		} else { assert(event == Connection::OnRecv);
-			// std::cout << "[" << c->socket << "] recv'd data. Current buffer:\n" << hex_dump(c->recv_buffer); std::cout.flush();
-			if (!channel_dispatcher.OnRecv(c->recv_buffer)) {
-				throw std::runtime_error("Unexpected packet");
-			}
-		}
-	}, 0.0);
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {

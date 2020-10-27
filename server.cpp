@@ -34,24 +34,6 @@ int main(int argc, char **argv) {
 	constexpr float ServerTick = 1.0f / 10.0f; //TODO: set a server tick that makes sense for your game
 
 	//server state:
-
-	//per-client state:
-	// struct PlayerInfo {
-	// 	PlayerInfo() {
-	// 		static uint32_t next_player_id = 1;
-	// 		name = "Player" + std::to_string(next_player_id);
-	// 		next_player_id += 1;
-	// 	}
-	// 	std::string name;
-
-	// 	uint32_t left_presses = 0;
-	// 	uint32_t right_presses = 0;
-	// 	uint32_t up_presses = 0;
-	// 	uint32_t down_presses = 0;
-
-	// 	int32_t total = 0;
-
-	// };
 	
 	Connection* left_connection { nullptr };
 	Player left_player(ChannelId::LEFT_SIDE);
@@ -89,6 +71,7 @@ int main(int argc, char **argv) {
 					} else if (!right_connection) {
 						right_connection = c;
 
+						std::cout << "Game starts!:\n" << std::endl;
 						// Game starts!
 						Message<ChannelId, 4> left_msg(kMagicHeader, ChannelId::CONTROL_CHANNEL);
 						left_msg << true;
@@ -96,7 +79,7 @@ int main(int argc, char **argv) {
 
 						Message<ChannelId, 4> right_msg(kMagicHeader, ChannelId::CONTROL_CHANNEL);
 						right_msg << true;
-						right_msg.Send(left_connection->send_buffer);
+						right_msg.Send(right_connection->send_buffer);
 
 						game_start = true;
 					} else {
