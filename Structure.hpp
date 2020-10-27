@@ -2,7 +2,7 @@
 
 #include "NetCommon.hpp"
 #include "Message.hpp"
-
+#include "Scene.hpp"
 
 class Structure {
 public:
@@ -22,6 +22,7 @@ public:
 
 	void Upgrade() { ++level_; }
 	Type GetType() const { return type_; }
+	void Draw(Scene& scene) const;
 
 	Structure(Type type): type_(type) {}
 	Structure() {}
@@ -29,4 +30,7 @@ public:
 private:
 	int level_ { 1 };
 	Type type_ { Type::NONE };
+
+	Scene::Transform transform_;
+	Scene::Drawable drawable_;
 };

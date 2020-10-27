@@ -11,4 +11,11 @@ enum class RpcId : uint8_t
 	SUMMON_ANT
 };
 
-inline constexpr std::string kMagicHeader { "ATWR" };
+enum class ChannelId : uint8_t
+{
+	CONTROL_CHANNEL = 0,
+	LEFT_SIDE,
+	RIGHT_SIDE
+};
+
+inline const std::string kMagicHeader { "ATWR" };

@@ -2,6 +2,11 @@
 
 #include "Connection.hpp"
 #include "Scene.hpp"
+#define CLIENT
+#include "Player.hpp"
+#include "Message.hpp"
+#include "NetCommon.hpp"
+#include "Load.hpp"
 
 #include <glm/glm.hpp>
 
@@ -23,10 +28,14 @@ struct PlayMode : Mode {
 	struct Button {
 		uint8_t downs = 0;
 		uint8_t pressed = 0;
-	} left, right, down, up;
+	} left, right, down, up, 
+	arrow_left, arrow_right, arrow_down, arrow_up,
+	enter;
 
-	//last message from server:
-	std::string server_message;
+	MessageDispatcher<ChannelId, 4> channel_dispatcher { kMagicHeader };
+	Player left_side;
+	Player right_side;
+	Player* player { nullptr };
 
 	//connection to server:
 	Client &client;
@@ -35,4 +44,9 @@ struct PlayMode : Mode {
 
 	//camera:
 	Scene::Camera *camera = nullptr;
+
+	bool game_start { false };
 };
+
+extern Load< MeshBuffer > ant_war_meshes;
+extern Load< Scene > ant_war_scene;

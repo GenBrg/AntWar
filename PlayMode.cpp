@@ -33,8 +33,26 @@ Load< Scene > ant_war_scene(LoadTagDefault, []() -> Scene const * {
 
 PlayMode::PlayMode(Client &client_) : 
 client(client_),
-scene(*ant_war_scene) 
+scene(*ant_war_scene),
+left_side(ChannelId::LEFT_SIDE),
+right_side(ChannelId::RIGHT_SIDE)
 {
+	channel_dispatcher.RegisterMessageCallback(ChannelId::CONTROL_CHANNEL, [&](MessageReader<ChannelId, 4> reader){
+		bool is_left_side;
+		reader >> is_left_side;
+
+		game_start = true;
+		player = (is_left_side) ? &left_side : &right_side;
+	});
+
+	channel_dispatcher.RegisterMessageCallback(ChannelId::LEFT_SIDE, [&](MessageReader<ChannelId, 4> reader){
+		left_side.GetMessageDispatcher().OnRecv(reader.GetBuffer());
+	});
+
+	channel_dispatcher.RegisterMessageCallback(ChannelId::RIGHT_SIDE, [&](MessageReader<ChannelId, 4> reader){
+		right_side.GetMessageDispatcher().OnRecv(reader.GetBuffer());
+	});
+
 	//get pointer to camera for convenience:
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	camera = &scene.cameras.front();
@@ -44,6 +62,9 @@ PlayMode::~PlayMode() {
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
+	if (!game_start) {
+		return false;
+	}
 
 	if (evt.type == SDL_KEYDOWN) {
 		if (evt.key.repeat) {
@@ -64,6 +85,26 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.downs += 1;
 			down.pressed = true;
 			return true;
+		} else if (evt.key.keysym.sym == SDLK_LEFT) {
+			arrow_left.downs += 1;
+			arrow_left.pressed = true;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_RIGHT) {
+			arrow_right.downs += 1;
+			arrow_right.pressed = true;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_UP) {
+			arrow_up.downs += 1;
+			arrow_up.pressed = true;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_DOWN) {
+			arrow_down.downs += 1;
+			arrow_down.pressed = true;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_RETURN) {
+			enter.downs += 1;
+			enter.pressed = true;
+			return true;
 		}
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a) {
@@ -78,6 +119,21 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		} else if (evt.key.keysym.sym == SDLK_s) {
 			down.pressed = false;
 			return true;
+		} else if (evt.key.keysym.sym == SDLK_LEFT) {
+			arrow_left.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_RIGHT) {
+			arrow_right.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_UP) {
+			arrow_up.pressed = false;
+			return true;
+		}else if (evt.key.keysym.sym == SDLK_DOWN) {
+			arrow_down.pressed = false;
+			return true;
+		} else if (evt.key.keysym.sym == SDLK_RETURN) {
+			enter.pressed = false;
+			return true;
 		}
 	}
 
@@ -85,23 +141,15 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void PlayMode::update(float elapsed) {
+	if (!game_start) {
+		return;
+	}
 
-	// //queue data for sending to server:
-	// //TODO: send something that makes sense for your game
-	// if (left.downs || right.downs || down.downs || up.downs) {
-	// 	//send a five-byte message of type 'b':
-	// 	client.connections.back().send('b');
-	// 	client.connections.back().send(left.downs);
-	// 	client.connections.back().send(right.downs);
-	// 	client.connections.back().send(down.downs);
-	// 	client.connections.back().send(up.downs);
-	// }
-
+	// Update camera
 	constexpr float kCameraScrollingSpeed { 3.0f };
 	float& camera_y = camera->transform->position.y;
 	float& camera_z = camera->transform->position.z;
 
-	// Update camera
 	if (up.pressed && !down.pressed) camera_z += kCameraScrollingSpeed * elapsed;
 	if (!up.pressed && down.pressed) camera_z -= kCameraScrollingSpeed * elapsed;
 	if (right.pressed && !left.pressed) camera_y += kCameraScrollingSpeed * elapsed;
@@ -117,33 +165,23 @@ void PlayMode::update(float elapsed) {
 	down.downs = 0;
 
 	//send/receive data:
-	// client.poll([this](Connection *c, Connection::Event event){
-	// 	if (event == Connection::OnOpen) {
-	// 		std::cout << "[" << c->socket << "] opened" << std::endl;
-	// 	} else if (event == Connection::OnClose) {
-	// 		std::cout << "[" << c->socket << "] closed (!)" << std::endl;
-	// 		throw std::runtime_error("Lost connection to server!");
-	// 	} else { assert(event == Connection::OnRecv);
-	// 		std::cout << "[" << c->socket << "] recv'd data. Current buffer:\n" << hex_dump(c->recv_buffer); std::cout.flush();
-	// 		//expecting message(s) like 'm' + 3-byte length + length bytes of text:
-	// 		while (c->recv_buffer.size() >= 4) {
-	// 			std::cout << "[" << c->socket << "] recv'd data. Current buffer:\n" << hex_dump(c->recv_buffer); std::cout.flush();
-	// 			char type = c->recv_buffer[0];
-	// 			if (type != 'm') {
-	// 				throw std::runtime_error("Server sent unknown message type '" + std::to_string(type) + "'");
-	// 			}
-	// 			uint32_t size = (
-	// 				(uint32_t(c->recv_buffer[1]) << 16) | (uint32_t(c->recv_buffer[2]) << 8) | (uint32_t(c->recv_buffer[3]))
-	// 			);
-	// 			if (c->recv_buffer.size() < 4 + size) break; //if whole message isn't here, can't process
-	// 			//whole message *is* here, so set current server message:
-	// 			server_message = std::string(c->recv_buffer.begin() + 4, c->recv_buffer.begin() + 4 + size);
+	if (enter.pressed) {
+		player->SummonAntStub(Ant::Type::FIGHTER);
+	}
 
-	// 			//and consume this part of the buffer:
-	// 			c->recv_buffer.erase(c->recv_buffer.begin(), c->recv_buffer.begin() + 4 + size);
-	// 		}
-	// 	}
-	// }, 0.0);
+	client.poll([this](Connection *c, Connection::Event event){
+		if (event == Connection::OnOpen) {
+			std::cout << "[" << c->socket << "] opened" << std::endl;
+		} else if (event == Connection::OnClose) {
+			std::cout << "[" << c->socket << "] closed (!)" << std::endl;
+			throw std::runtime_error("Lost connection to server!");
+		} else { assert(event == Connection::OnRecv);
+			// std::cout << "[" << c->socket << "] recv'd data. Current buffer:\n" << hex_dump(c->recv_buffer); std::cout.flush();
+			if (!channel_dispatcher.OnRecv(c->recv_buffer)) {
+				throw std::runtime_error("Unexpected packet");
+			}
+		}
+	}, 0.0);
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {

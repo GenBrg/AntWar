@@ -102,12 +102,6 @@ if $(OS) = NT { #Windows
 #Store the names of various .cpp files to build into variables:
 CLIENT_NAMES =
 	client
-	PlayMode
-	LitColorTextureProgram
-	#ColorTextureProgram #not used right now, but you might want it
-	Sound
-	load_wav
-	load_opus
 	;
 
 SERVER_NAMES =
@@ -115,6 +109,12 @@ SERVER_NAMES =
 	;
 
 COMMON_NAMES =
+	PlayMode
+	LitColorTextureProgram
+	#ColorTextureProgram #not used right now, but you might want it
+	Sound
+	load_wav
+	load_opus
 	data_path
 	PathFont
 	PathFont-font
@@ -130,6 +130,9 @@ COMMON_NAMES =
 	Connection
 	hex_dump
 	Message
+	Player
+	Ant
+	Structure
 	;
 
 

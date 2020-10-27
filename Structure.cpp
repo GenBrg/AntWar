@@ -41,5 +41,11 @@ int Structure::GetUpgradePrice()
 {
 	int base_price = GetBuyPrice(type_);
 
-	return base_price * (level_ * 0.1f + 1);
+	return static_cast<int>(base_price * (level_ * 0.1f + 1));
 }
+
+void Structure::Draw(Scene& scene) const
+{
+	scene.dynamic_drawables.emplace_back(drawable_);
+}
+

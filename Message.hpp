@@ -25,26 +25,12 @@ template <typename T, size_t MagicHeaderSize>
 class MessageDispatcher;
 
 template<typename T>
-size_t get_net_size(const T& data) {
-	static_assert(std::is_standard_layout<T>::value, "Can not decide net size of non-standard_layout type");
-	return sizeof(data);
-}
+size_t get_net_size(const T& data);
 
 template<typename T>
-size_t get_net_size(const std::vector<T>& data) {
-	size_t sz = sizeof(uint16_t);
+size_t get_net_size(const std::vector<T>& data);
 
-	for (const T& d : data) {
-		sz += get_net_size(d);
-	}
-
-	return sz;
-}
-
-template<>
-size_t get_net_size<std::string>(const std::string& data) {
-	return sizeof(uint16_t) + sizeof(std::string::value_type) * data.size();
-}
+size_t get_net_size(const std::string& data);
 
 #pragma pack(push, 1)
 
@@ -102,6 +88,22 @@ public:
 		return msg;
 	}
 
+	template <typename U, size_t V>
+	friend Message& operator << (Message& msg, const Message<U, V>& data)
+	{
+		size_t final_body_size = msg.body_.size() + data.GetPacketSize();
+		assert(final_body_size <= Message::kMaxMessageBodySize);
+
+		msg.body_.reserve(final_body_size);
+		msg.header_.body_size = static_cast<uint32_t>(final_body_size);
+
+		data.Send(msg.body_);
+
+		assert(msg.body_.size() == final_body_size);
+		
+		return msg;
+	}
+
 	template<typename DataType>
 	friend Message& operator << (Message& msg, const std::vector<DataType>& data)
 	{
@@ -127,16 +129,18 @@ public:
 		return msg;
 	}
 
-	void Send(std::vector<uint8_t>& send_buffer)
+	void Send(std::vector<uint8_t>& send_buffer) const
 	{
 		size_t write_ptr = send_buffer.size();
-		send_buffer.resize(write_ptr + sizeof(MessageHeader) + body_.size());
+		send_buffer.resize(write_ptr + GetPacketSize());
 
 		memcpy(send_buffer.data() + write_ptr, &header_, sizeof(MessageHeader));
 		write_ptr += sizeof(MessageHeader);
 
 		memcpy(send_buffer.data() + write_ptr, body_.data(), body_.size());
 	}
+
+	size_t GetPacketSize() const { return kHeaderSize + body_.size(); }
 
 	Message(const std::string& magic_header, T id)
 	{
@@ -195,6 +199,8 @@ public:
 
 		return reader;
 	}
+
+	std::vector<uint8_t> GetBuffer() const { return buffer_; }
 
 	MessageReader(const MessageType& message) :
 		buffer_(message.body_)
@@ -294,3 +300,22 @@ private:
 	// TODO Maybe add rpc queue for client to poll events and execute in a separate thread.
 	// std::deque<std::pair<MessageReader, std::function<void(MessageReaderType)>> rpc_queue_;
 };
+
+template<typename T>
+size_t get_net_size(const T& data) {
+	static_assert(std::is_standard_layout<T>::value, "Can not decide net size of non-standard_layout type");
+	return sizeof(data);
+}
+
+template<typename T>
+size_t get_net_size(const std::vector<T>& data) {
+	size_t sz = sizeof(uint16_t);
+
+	for (const T& d : data) {
+		sz += get_net_size(d);
+	}
+
+	return sz;
+}
+
+size_t get_net_size(const std::string& data);
