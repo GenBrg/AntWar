@@ -44,6 +44,7 @@ right_side(ChannelId::RIGHT_SIDE)
 		game_start = true;
 		std::cout << "Game starts!" << std::endl;
 		player = (is_left_side) ? &left_side : &right_side;
+		camera->transform->position.y = (is_left_side) ? -5.0f : 5.0f;
 	});
 
 	channel_dispatcher.RegisterMessageCallback(ChannelId::LEFT_SIDE, [&](MessageReader<ChannelId, 4> reader){
@@ -183,6 +184,8 @@ void PlayMode::update(float elapsed) {
 	if (enter.pressed) {
 		player->SummonAntStub(Ant::Type::FIGHTER);
 	}
+
+	player->SendRpcs(client.connection.send_buffer);
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {

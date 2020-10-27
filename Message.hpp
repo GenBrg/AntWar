@@ -266,7 +266,7 @@ public:
 
 			auto it = rpc_dispatch_table_.find(id);
 			if (it == rpc_dispatch_table_.end()) {
-				std::cerr << "No rpc corresponds to the packet, id: " << static_cast<uint8_t>(id) << std::endl;
+				std::cerr << "No rpc corresponds to the packet, id: " << static_cast<uint32_t>(id) << std::endl;
 				return false;
 			}
 

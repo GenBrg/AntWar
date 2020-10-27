@@ -1,6 +1,7 @@
 #include "Player.hpp"
 
 #include <chrono>
+#include <iostream>
 
 Player::Player(ChannelId side) :
 side_(side)
@@ -36,6 +37,7 @@ void Player::UpdatePlayerStub()
 
 void Player::UpgradeStructureImpl(MessageReader<RpcId, 4>& reader)
 {
+	std::cout << "Upgrade structure impl" << std::endl;
 	uint8_t structure_id;
 	reader >> structure_id;
 
@@ -59,6 +61,7 @@ void Player::UpgradeStructureImpl(MessageReader<RpcId, 4>& reader)
 
 void Player::SellStructureImpl(MessageReader<RpcId, 4>& reader)
 {
+	std::cout << "Sell structure impl" << std::endl;
 	uint8_t structure_id;
 	reader >> structure_id;
 
@@ -77,6 +80,7 @@ void Player::SellStructureImpl(MessageReader<RpcId, 4>& reader)
 
 void Player::BuyStructureImpl(MessageReader<RpcId, 4>& reader)
 {
+	std::cout << "Buy structure impl" << std::endl;
 	Structure::Type type;
 	uint8_t structure_id;
 	reader >> type >> structure_id;
@@ -101,6 +105,7 @@ void Player::BuyStructureImpl(MessageReader<RpcId, 4>& reader)
 
 void Player::SummonAntImpl(MessageReader<RpcId, 4>& reader)
 {
+	std::cout << "Summon ant impl" << std::endl;
 	static std::chrono::high_resolution_clock::time_point last_summon_time;
 	constexpr std::chrono::milliseconds kSummonCoolDown{ 3000 };
 
@@ -128,8 +133,6 @@ void Player::SummonAntImpl(MessageReader<RpcId, 4>& reader)
 
 void Player::UpdatePlayerImpl(MessageReader<RpcId, 4>& reader)
 {
-	Message<RpcId, 4> msg(kMagicHeader, RpcId::UPDATE_PLAYER);
-
 	reader >> hp_ >> man_power_;
 	reader >> structures_;
 	std::vector<Ant> ants;
@@ -140,6 +143,7 @@ void Player::UpdatePlayerImpl(MessageReader<RpcId, 4>& reader)
 
 void Player::UpgradeStructureStub(uint8_t structure_id)
 {
+	std::cout << "Upgrade structure stub" << std::endl;
 	queued_rpcs_.emplace_back(kMagicHeader, RpcId::UPGRADE_STRUCTURE);
 	auto& msg = queued_rpcs_.back();
 
@@ -148,6 +152,7 @@ void Player::UpgradeStructureStub(uint8_t structure_id)
 
 void Player::SellStructureStub(uint8_t structure_id)
 {
+	std::cout << "Sell structure stub" << std::endl;
 	queued_rpcs_.emplace_back(kMagicHeader, RpcId::SELL_STRUCTURE);
 	auto& msg = queued_rpcs_.back();
 
@@ -156,6 +161,7 @@ void Player::SellStructureStub(uint8_t structure_id)
 
 void Player::BuyStructureStub(Structure::Type structure_type, uint8_t structure_id)
 {
+	std::cout << "Buy structure stub" << std::endl;
 	queued_rpcs_.emplace_back(kMagicHeader, RpcId::BUILD_STRUCTURE);
 	auto& msg = queued_rpcs_.back();
 
@@ -164,6 +170,23 @@ void Player::BuyStructureStub(Structure::Type structure_type, uint8_t structure_
 
 void Player::SummonAntStub(Ant::Type type)
 {
+	static std::chrono::high_resolution_clock::time_point last_summon_time;
+	constexpr std::chrono::milliseconds kSummonCoolDown{ 3000 };
+
+	auto now = std::chrono::high_resolution_clock::now();
+
+	if (now - last_summon_time < kSummonCoolDown) {
+		return;
+	}
+
+	// int ant_price = GetAntPrice();
+
+	// if (man_power_ < ant_price) {
+	// 	return;
+	// }
+
+	last_summon_time = now;
+	std::cout << "Summon ant stub" << std::endl;
 	queued_rpcs_.emplace_back(kMagicHeader, RpcId::SUMMON_ANT);
 	auto& msg = queued_rpcs_.back();
 
@@ -198,6 +221,10 @@ void Player::Draw(Scene& scene)
 
 void Player::SendRpcs(std::vector<uint8_t>& send_buffer)
 {
+	if (queued_rpcs_.empty()) {
+		return;
+	}
+
 	Message<ChannelId, 4> msg(kMagicHeader, side_);
 
 	for (const auto& rpc : queued_rpcs_) {
@@ -205,4 +232,6 @@ void Player::SendRpcs(std::vector<uint8_t>& send_buffer)
 	}
 
 	msg.Send(send_buffer);
+
+	queued_rpcs_.clear();
 }

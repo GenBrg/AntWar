@@ -45,10 +45,12 @@ int main(int argc, char **argv) {
 	bool game_start { false };
 
 	left_channel_dispatcher.RegisterMessageCallback(ChannelId::LEFT_SIDE, [&](MessageReader<ChannelId, 4> reader){
+		std::cout << "Left side rpc!" << std::endl;
 		left_player.GetMessageDispatcher().OnRecv(reader.GetBuffer());
 	});
 
 	right_channel_dispatcher.RegisterMessageCallback(ChannelId::RIGHT_SIDE, [&](MessageReader<ChannelId, 4> reader){
+		std::cout << "Right side rpc!" << std::endl;
 		right_player.GetMessageDispatcher().OnRecv(reader.GetBuffer());
 	});
 	
@@ -78,7 +80,7 @@ int main(int argc, char **argv) {
 						left_msg.Send(left_connection->send_buffer);
 
 						Message<ChannelId, 4> right_msg(kMagicHeader, ChannelId::CONTROL_CHANNEL);
-						right_msg << true;
+						right_msg << false;
 						right_msg.Send(right_connection->send_buffer);
 
 						game_start = true;
@@ -111,6 +113,20 @@ int main(int argc, char **argv) {
 		if (!game_start) {
 			continue;
 		}
+
+		static auto last_tick = std::chrono::steady_clock::now();
+		auto now = std::chrono::steady_clock::now();
+		float elapsed = std::chrono::duration<float>(now - last_tick).count();
+		last_tick = now;
+
+		left_player.Update(elapsed);
+		right_player.Update(elapsed);
+
+		left_player.UpdatePlayerStub();
+		right_player.UpdatePlayerStub();
+
+		left_player.SendRpcs(left_connection->send_buffer);
+		right_player.SendRpcs(right_connection->send_buffer);
 	}
 
 
